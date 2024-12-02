@@ -1,0 +1,18 @@
+[package]
+name = "bluetooth_mitm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }  # For async runtime
+tokio-tungstenite = "0.17"  # If you're using WebSockets (optional)
+rusb = "0.9"  # For USB communications if needed
+btleplug = "0.11.6"  # For Bluetooth Low Energy support
+futures = "0.3.31"
+async-stream = "0.3.6"
+futures-util = "0.3.31"
+futures-core = "0.3.31"
+chrono = "0.4.38"
+itertools = "0.13.0"
+uuid = "1.11.0"
+
