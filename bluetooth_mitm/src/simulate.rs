@@ -21,9 +21,16 @@ impl SimulateState {
     }
     fn update(&mut self, delta_time: std::time::Duration) {
         self.time += delta_time;
-        let def = HandPos::default();
-        self.hand_pos.f1.upper.1 = def.f1.upper.1 + ((self.time.as_millis()) as f32 / 1000.0).sin();
-        self.hand_pos.f1.upper.2 = def.f1.upper.2 + ((self.time.as_millis()) as f32 / 2000.0).sin();
+        self.hand_pos.0[0] = ((self.time.as_millis()) as f32 / 1200.0).sin();
+        self.hand_pos.0[1] = ((self.time.as_millis()) as f32 / 800.0).sin();
+        self.hand_pos.0[2] = ((self.time.as_millis()) as f32 / 400.0).sin();
+        self.hand_pos.0[3] = ((self.time.as_millis()) as f32 / 300.0).sin();
+        self.hand_pos.0[4] = ((self.time.as_millis()) as f32 / 200.0).sin();
+        self.hand_pos.0[5] = ((self.time.as_millis()) as f32 / 100.0).sin();
+        self.hand_pos.0[6] = ((self.time.as_millis()) as f32 / 1600.0).sin();
+        self.hand_pos.0[7] = ((self.time.as_millis()) as f32 / 500.0).sin();
+        // self.hand_pos.f1.upper.1 = def.f1.upper.1 + ((self.time.as_millis()) as f32 / 1000.0).sin();
+        // self.hand_pos.f1.upper.2 = def.f1.upper.2 + ((self.time.as_millis()) as f32 / 2000.0).sin();
         // self.hand_pos.f1.upper.2 =
         //     def.f1.upper.2 + ((self.time.as_millis() % 1000) as f32 / 1000.0).sin();
     }
@@ -107,7 +114,7 @@ pub struct Writer {
     sender: Sender<HandCommand>,
 }
 impl DeviceWriter for Writer {
-    async fn write(&self, command: HandCommand) {
+    async fn write(&mut self, command: HandCommand) {
         self.sender
             .send(command)
             .await

@@ -48,31 +48,54 @@ impl DeviceReader for Reader {
             .subscribe(&self.characteristic)
             .await
             .unwrap();
-        let mut notification_stream = self.peripheral.notifications().await.unwrap().take(1000000);
+        let mut notification_stream = self.peripheral.notifications().await.unwrap();
 
         while let Some(data) = { notification_stream.next().await } {
-            let val = String::from_utf8(data.value.clone())
-                .unwrap_or_else(|_| format!("fail parse : {:?}", data.value));
-            println!("Received data from {:?} [{:?}]", data.uuid, val);
+            let val = data.value.clone();
+            let mut floats = [0f32; 8];
+
+            for (i, chunk) in val.chunks_exact(4).take(8).enumerate() {
+                // Ensure that each chunk is 4 bytes (size of a single f32)
+                let chunk: [u8; 4] = chunk.try_into().unwrap_or([0, 0, 0, 0]);
+                // Interpret the 4 bytes as a single f32 value
+                let float = f32::from_ne_bytes(chunk);
+                floats[i] = float;
+            }
+
+            println!("Received data [{:?}]", floats);
 
             //TODO convert bluetooth data to HandPos
-            sender.send(HandPos::default()).await;
+            sender.send(HandPos(floats)).await;
         }
     }
 }
 
-pub struct Writer {}
+pub struct Writer {
+    pub peripheral: Peripheral,
+    pub characteristic: Characteristic,
+}
 
 impl DeviceWriter for Writer {
-    async fn write(&self, command: crate::hand::HandCommand) -> () {
-        println!("pretended to write");
+    async fn write(&mut self, command: crate::hand::HandCommand) -> () {
+        println!("got here as well");
+        self.peripheral
+            .write(
+                &self.characteristic,
+                &command.0.to_vec(),
+                btleplug::api::WriteType::WithoutResponse,
+            )
+            .await
+            .expect("failed to write");
     }
 }
 
 /// Only devices whose name contains this string will be tried.
-const PERIPHERAL_NAME_MATCH_FILTER: &str = "ESP32";
+const PERIPHERAL_NAME_MATCH_FILTER: &str = "TrueTouch";
 /// UUID of the characteristic for which we should subscribe to notifications.
 const NOTIFY_CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x6e400001_b5a3_f393_e0a9_e50e24dcca9e);
+
+// 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
+const WRITE_CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x6e400002_b5a3_f393_e0a9_e50e24dcca9e);
 
 const SECONDS_TO_SCAN: u64 = 5;
 
@@ -126,20 +149,20 @@ async fn reader_writer_fail() -> Result<(Reader, Writer), Box<dyn Error>> {
                     if is_connected {
                         println!("Discover peripheral {:?} services...", local_name);
                         peripheral.discover_services().await?;
+                        let mut reader = None;
+                        let mut writer = None;
                         for characteristic in peripheral.characteristics() {
                             println!("Checking characteristic {:?}", characteristic);
                             // Subscribe to notifications from the characteristic with the selected
                             // UUID.
                             if characteristic.uuid == NOTIFY_CHARACTERISTIC_UUID
-                                && characteristic.properties.contains(CharPropFlags::NOTIFY)
+                            // && characteristic.properties.contains(CharPropFlags::NOTIFY)
                             {
-                                return Ok((
-                                    Reader {
-                                        characteristic,
-                                        peripheral,
-                                    },
-                                    Writer {},
-                                ));
+                                reader = Some(Reader {
+                                    characteristic: characteristic.clone(),
+                                    peripheral: peripheral.clone(),
+                                });
+
                                 // peripheral.subscribe(&characteristic).await?;
                                 // // Print the first 4 notifications received.
                                 // let mut notification_stream =
@@ -154,6 +177,18 @@ async fn reader_writer_fail() -> Result<(Reader, Writer), Box<dyn Error>> {
                                 //     );
                                 // }
                             }
+                            if characteristic.uuid == WRITE_CHARACTERISTIC_UUID
+                            // && characteristic.properties.contains(CharPropFlags::WRITE)
+                            {
+                                writer = Some(Writer {
+                                    characteristic,
+                                    peripheral: peripheral.clone(),
+                                })
+                            }
+                        }
+                        match (reader, writer) {
+                            (Some(reader), Some(writer)) => return Ok((reader, writer)),
+                            _ => {}
                         }
                         println!("Disconnecting from peripheral {:?}...", local_name);
                         peripheral.disconnect().await?;

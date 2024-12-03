@@ -1,7 +1,26 @@
 use itertools::Itertools;
 
 #[derive(Debug, Clone)]
-pub struct HandPos {
+pub struct HandPos(pub [f32; 8]);
+
+impl HandPos {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut ret: Vec<u8> = Vec::new();
+        for part in &self.0 {
+            ret.extend_from_slice(&part.to_ne_bytes());
+        }
+        ret
+    }
+}
+
+impl Default for HandPos {
+    fn default() -> Self {
+        HandPos([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HandPosOld {
     pub f1: FingerPos,
     pub f2: FingerPos,
     pub f3: FingerPos,
@@ -9,9 +28,9 @@ pub struct HandPos {
     pub f5: FingerPos,
 }
 
-impl Default for HandPos {
+impl Default for HandPosOld {
     fn default() -> Self {
-        HandPos {
+        HandPosOld {
             f1: FingerPos {
                 upper: SensorPos(0.0, 1.0, -2.0),
                 lower: SensorPos(0.0, 0.0, -2.0),
@@ -45,7 +64,7 @@ pub struct FingerPos {
 #[derive(Debug, Clone)]
 pub struct SensorPos(pub f32, pub f32, pub f32);
 
-impl HandPos {
+impl HandPosOld {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut ret: Vec<u8> = Vec::new();
         for f in &[&self.f1, &self.f2, &self.f3, &self.f4, &self.f5] {
@@ -60,44 +79,58 @@ impl HandPos {
 }
 
 #[derive(Debug, Clone)]
-pub struct HandCommand {
-    pub f1: FingerCommand,
-    pub f2: FingerCommand,
-    pub f3: FingerCommand,
-    pub f4: FingerCommand,
-    pub f5: FingerCommand,
-}
+pub struct HandCommand(pub [u8; 1]);
 
 impl HandCommand {
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let mut bytes_iter = bytes
-            .into_iter()
-            .tuple_windows()
-            .map(|(&i1, &i2, &i3, &i4)| [i1, i2, i3, i4]);
-        HandCommand {
-            f1: FingerCommand {
-                upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-                lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-            },
-            f2: FingerCommand {
-                upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-                lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-            },
-            f3: FingerCommand {
-                upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-                lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-            },
-            f4: FingerCommand {
-                upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-                lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-            },
-            f5: FingerCommand {
-                upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-                lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
-            },
-        }
+        HandCommand([
+            *bytes.get(0).unwrap_or(&0),
+            // *bytes.get(1).unwrap_or(&0),
+            // *bytes.get(2).unwrap_or(&0),
+            // *bytes.get(3).unwrap_or(&0),
+        ])
     }
 }
+
+// #[derive(Debug, Clone)]
+// pub struct HandCommand {
+//     pub f1: FingerCommand,
+//     pub f2: FingerCommand,
+//     pub f3: FingerCommand,
+//     pub f4: FingerCommand,
+//     pub f5: FingerCommand,
+// }
+
+// impl HandCommand {
+//     pub fn from_bytes(bytes: &[u8]) -> Self {
+//         let mut bytes_iter = bytes
+//             .into_iter()
+//             .tuple_windows()
+//             .map(|(&i1, &i2, &i3, &i4)| [i1, i2, i3, i4]);
+//         HandCommand {
+//             f1: FingerCommand {
+//                 upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//                 lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//             },
+//             f2: FingerCommand {
+//                 upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//                 lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//             },
+//             f3: FingerCommand {
+//                 upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//                 lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//             },
+//             f4: FingerCommand {
+//                 upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//                 lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//             },
+//             f5: FingerCommand {
+//                 upper: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//                 lower: PulleyPull(f32::from_ne_bytes(bytes_iter.next().unwrap())),
+//             },
+//         }
+//     }
+// }
 #[derive(Debug, Clone)]
 pub struct FingerCommand {
     pub upper: PulleyPull,

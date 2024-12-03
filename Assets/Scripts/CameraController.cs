@@ -3,14 +3,14 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
   public float mouseSensitivity = 100f; // Sensitivity of mouse movement
-  public float moveSpeed = 5f;         // Speed of movement
+  public float moveSpeed = 5f;          // Speed of movement
 
-  private float xRotation = 0f;       // Keep track of vertical rotation
+  private float xRotation = 0f;         // Keep track of vertical rotation
 
   void Start()
   {
     // Lock the cursor to the center of the screen and make it invisible
-    Cursor.lockState = CursorLockMode.Locked;
+    // Cursor.lockState = CursorLockMode.Locked;
   }
 
   void Update()
@@ -28,8 +28,15 @@ public class CameraController : MonoBehaviour
     // Movement
     float moveX = Input.GetAxis("Horizontal"); // A/D keys
     float moveZ = Input.GetAxis("Vertical");   // W/S keys
+    float moveY = 0f;
 
-    Vector3 move = transform.parent.right * moveX + transform.parent.forward * moveZ;
+    if (Input.GetKey(KeyCode.Space)) moveY = 1f;   // Move up
+    if (Input.GetKey(KeyCode.LeftShift)) moveY = -1f; // Move down
+
+    Vector3 move = transform.parent.right * moveX +
+                   transform.parent.forward * moveZ +
+                   Vector3.up * moveY;
+
     transform.parent.position += move * moveSpeed * Time.deltaTime;
   }
 }

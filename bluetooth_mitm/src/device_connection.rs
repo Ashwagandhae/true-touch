@@ -1,12 +1,9 @@
-use std::{fs::read, future::Future};
-
-use futures_core::Stream;
-use futures_util::pin_mut;
-use futures_util::stream::StreamExt;
+use std::{future::Future, time::Duration};
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{tcp::OwnedWriteHalf, TcpListener},
+    time::interval,
 };
 
 use crate::hand::{HandCommand, HandPos};
@@ -18,7 +15,7 @@ pub trait DeviceConnection: Sized + Sync {
 }
 
 pub trait DeviceWriter: Sized + Send + 'static {
-    fn write(&self, command: HandCommand) -> impl Future<Output = ()> + Send + Sync;
+    fn write(&mut self, command: HandCommand) -> impl Future<Output = ()> + Send;
 }
 
 pub trait DeviceReader: Sized + Send + 'static {
@@ -40,7 +37,7 @@ impl DeviceReadSender {
             .write_all(&message_bytes)
             .await
             .expect("Socket broke");
-        println!("socket message sent to Unity: {:?}", &message_bytes[..]);
+        println!("socket message sent to Unity: {:?}", message);
     }
 }
 
@@ -48,7 +45,10 @@ pub async fn run<T: DeviceConnection>() {
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
     println!("TCP server running on 127.0.0.1:8080");
 
-    let (mut reader, writer) = T::reader_writer().await;
+    let (mut reader, mut writer) = T::reader_writer().await;
+
+    let mut buf = vec![0; 1024];
+    let mut int = interval(Duration::from_secs(1));
 
     println!("Awaiting unity connection");
     let (socket, _) = listener.accept().await.unwrap();
@@ -59,7 +59,12 @@ pub async fn run<T: DeviceConnection>() {
     let read_task = async { reader.read(DeviceReadSender { socket_writer }).await };
 
     let write_task = tokio::spawn(async move {
-        let mut buf = vec![0; 1024];
+        // loop {
+        //     println!("got here");
+        //     writer.write(HandCommand::from_bytes(&buf)).await;
+        //     println!("sent something");
+        //     int.tick().await;
+        // }
         loop {
             match socket_reader.read(&mut buf).await {
                 Ok(0) => {

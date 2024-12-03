@@ -6,10 +6,10 @@ using UnityEngine.UIElements;
 
 public class Finger : MonoBehaviour
 {
-  private float scale = 0.5F;
+  // private float scale = 0.5F;
   [SerializeField] private BluetoothClient client;
   // [SerializeField] private CapsuleCollider collider;
-  [SerializeField] private int arrOffset = 0;
+  [SerializeField] private int whichJoint;
   // Start is called before the first frame update
   void Start()
   {
@@ -25,12 +25,16 @@ public class Finger : MonoBehaviour
       return;
     }
     // Debug.Log("client is not null");
-    float[] arr = client.GetArr();
+    // float[] arr = client.GetArr();
 
-    Vector3 upperPos = new Vector3(arr[arrOffset + 0], arr[arrOffset + 1], arr[arrOffset + 2]) * scale;
-    Vector3 lowerPos = new Vector3(arr[arrOffset + 3], arr[arrOffset + 4], arr[arrOffset + 5]) * scale;
+    // Vector3 upperPos = new Vector3(arr[arrOffset + 0], arr[arrOffset + 1], arr[arrOffset + 2]) * scale;
+    // Vector3 lowerPos = new Vector3(arr[arrOffset + 3], arr[arrOffset + 4], arr[arrOffset + 5]) * scale;
 
-    transform.position = (upperPos + lowerPos) / 2;
-    transform.rotation = Quaternion.LookRotation(upperPos - lowerPos) * Quaternion.Euler(90, 0, 0);
+    // transform.position = (upperPos + lowerPos) / 2;
+    // transform.rotation = Quaternion.LookRotation(upperPos - lowerPos) * Quaternion.Euler(90, 0, 0);
+    var res = client.GetJointPos(whichJoint);
+
+    transform.position = res.Item1;
+    transform.rotation = res.Item2;
   }
 }
