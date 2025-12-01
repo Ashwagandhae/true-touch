@@ -24,6 +24,8 @@ public class BluetoothClient : MonoBehaviour
 
   public byte HandCommand = 0;
 
+  private Nullable<Quaternion> initialFingerAngle = null;
+
 
 
   void Start()
@@ -93,12 +95,17 @@ public class BluetoothClient : MonoBehaviour
 
   public void SendHandCommand()
   {
-    if (stream != null && stream.DataAvailable)
+    if (stream != null)
     {
 
       Debug.Log("sending hand command!!");
       byte[] data = { HandCommand }; // Example data
       stream.Write(data, 0, data.Length);
+    }
+    else
+    {
+
+      Debug.Log("stream is null!!");
     }
   }
 
@@ -127,56 +134,46 @@ public class BluetoothClient : MonoBehaviour
 
   private void UpdateJoints()
   {
-    Quaternion handAngle = new(arr[0], arr[1], arr[2], arr[3]);
-    Quaternion fingerAngle = new(arr[4], arr[5], arr[6], arr[7]);
-    Debug.Log("handAngle");
-    Debug.Log(handAngle);
+    // Quaternion handAngle = new(arr[0], arr[1], arr[2], arr[3]);
+    // Quaternion fingerAngle = new(arr[4], arr[5], arr[6], arr[7]);
 
-    Debug.Log("fingerAngle1");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(90, 0, 0)));
-    Debug.Log("fingerAngle2");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(-90, 0, 0)));
-    Debug.Log("fingerAngle3");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(0, 90, 0)));
-    Debug.Log("fingerAngle4");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(0, -90, 0)));
-    Debug.Log("fingerAngle5");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(0, 0, 90)));
-    Debug.Log("fingerAngle6");
-    Debug.Log(fingerAngle * Quaternion.Euler(new Vector3(0, 0, -90)));
+    // Debug.Log("handAngle");
+    // Debug.Log(handAngle);
+    // Debug.Log("fingerAngle");
+    // Debug.Log(fingerAngle);
 
+    // // fingerAngle *= Quaternion.Euler(new Vector3(0, -90, 0));
+    // Quaternion fingerNormalized = Quaternion.Inverse(handAngle) * fingerAngle;
+    // // Vector3 fingerEuler = fingerNormalized.eulerAngles;
 
+    // // Debug.Log(fingerEuler);
+    // float angle = Quaternion.Angle(handAngle, fingerAngle);
 
+    // Debug.Log("euler angles");
+    // Debug.Log(fingerNormalized.eulerAngles);
 
-    // fingerAngle *= Quaternion.Euler(new Vector3(0, -90, 0));
-    // Quaternion fingerNormalized = fingerAngle * Quaternion.Inverse(handAngle);
-    // Vector3 fingerEuler = fingerNormalized.eulerAngles;
+    // Debug.Log("anglebetween");
+    // Debug.Log(angle);
 
-    // Debug.Log(fingerEuler);
-    float angle = Quaternion.Angle(handAngle, fingerAngle);
+    // float bentness;
+    // float e = ((angle % 180) + 180) % 180;
 
-    Debug.Log("anglebetween");
-    Debug.Log(angle);
+    // float range = 70.0F;
+    // float rangeStart = 10.0F;
 
-    float bentness;
-    float e = ((angle % 180) + 180) % 180;
-
-    float range = 70.0F;
-    float rangeStart = 10.0F;
-
-    if (0 < e && e < rangeStart)
-    {
-      bentness = 0;
-    }
-    else if (e < rangeStart + range)
-    {
-      bentness = (e - rangeStart) / range;
-    }
-    else
-    {
-      bentness = 1;
-    }
-    UpdateJointsBentness(bentness);
+    // if (0 < e && e < rangeStart)
+    // {
+    //   bentness = 0;
+    // }
+    // else if (e < rangeStart + range)
+    // {
+    //   bentness = (e - rangeStart) / range;
+    // }
+    // else
+    // {
+    //   bentness = 1;
+    // }
+    UpdateJointsBentness(arr[0]);
   }
 
   private void UpdateJointsBentness(float bentness)
