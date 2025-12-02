@@ -4,12 +4,13 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 
-public class Finger : MonoBehaviour
+public class FingerSegment : MonoBehaviour
 {
   // private float scale = 0.5F;
   [SerializeField] private BluetoothClient client;
   // [SerializeField] private CapsuleCollider collider;
   [SerializeField] private int whichJoint;
+  [SerializeField] private int whichFinger;
   // Start is called before the first frame update
   void Start()
   {
@@ -32,7 +33,7 @@ public class Finger : MonoBehaviour
 
     // transform.position = (upperPos + lowerPos) / 2;
     // transform.rotation = Quaternion.LookRotation(upperPos - lowerPos) * Quaternion.Euler(90, 0, 0);
-    var res = client.GetJointPos(whichJoint);
+    var res = client.GetJointPos(whichFinger, whichJoint);
 
     transform.position = res.Item1;
     transform.rotation = res.Item2;
